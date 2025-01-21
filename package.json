@@ -1,0 +1,17 @@
+{
+  "name": "test_biblio1",
+  "version": "1.0.0",
+  "main": "01-header-h1.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "assert": "^2.1.0",
+    "child-process": "^1.0.2",
+    "dotenv": "^16.4.7",
+    "selenium-webdriver": "^4.28.1"
+  }
+}
