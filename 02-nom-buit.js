@@ -2,36 +2,44 @@
 const { BaseTest } = require("./BaseTest.js")
 const { By, until } = require("selenium-webdriver");
 const assert = require('assert');
-
-// heredem una classe amb un sol mètode test()
-// emprem this.driver per utilitzar Selenium
-
+ 
+//.env
+require('dotenv').config()
+console.log(process.env)
+ 
 class MyTest extends BaseTest
 {
 	async test() {
-        // testejem login
+        // Login test
         //////////////////////////////////////////////////////
-        await this.driver.get("http://localhost:8000/register.php");
-        //await this.driver.findElement(By.name("nom")).getText();
-
-        // el INPUT name="nom" està buit
-
-        await this.driver.findElement(By.xpath("//button[text()='Seguent']")).click();
-
-        // comprovem que l'alert message és ERRONI
-        await this.driver.wait(until.alertIsPresent(),2000,"ERROR TEST: després del SEGUENT ha d'aparèixer un alert amb el resultat de la validació del NOM.");
-        let alert = await this.driver.switchTo().alert();
-        let alertText = await alert.getText();
-        let assertMessage = "El NOM no pot estar buit.";
-        assert(alertText==assertMessage,"ERROR TEST: si el nom està buit, l'alert ha de dir: '"+assertMessage+"'.");
-        await alert.accept();
-
+        var site = process.env.URL
+        var driver = this.driver
+        await driver.get(site+"/admin/login/");
+ 
+        // 1 cercar login box
+        let usernameInput = await driver.wait(until.elementLocated(By.id('id_username')), 10000);
+        let passwordInput = await driver.wait(until.elementLocated(By.id('id_password')), 10000);
+ 
+        // 2 posar usuari i pass
+        usernameInput.sendKeys(process.env.username)
+        passwordInput.sendKeys(process.env.password)
+ 
+        // 3 boto send .click()
+        let sendButton = await driver.wait(until.elementLocated(By.css('input[value="Iniciar sessió"]')), 10000);
+        sendButton.click()
+ 
+        // 4 comprovem que hem entrat
+        let logoutButton = await driver.wait(until.elementLocated(By.xpath('//button[@type="submit"]')), 10000);
+        var currentLogoutText = await logoutButton.getText();
+        var expectedText = "FINALITZAR SESSIÓ";
+        assert( currentLogoutText==expectedText, "Login fallit.\n\tTEXT TROBAT="+currentLogoutText+"\n\tTEXT ESPERAT="+expectedText);
+ 
         console.log("TEST OK");
 	}
 }
-
+ 
 // executem el test
-
+ 
 (async function test_example() {
 	const test = new MyTest();
 	await test.run();
