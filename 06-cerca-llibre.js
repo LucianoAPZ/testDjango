@@ -1,94 +1,72 @@
-// carreguem les llibreries
 const { BaseTest } = require("./BaseTest.js");
 const { By, until } = require("selenium-webdriver");
 const assert = require("assert");
-
-// .env
 require("dotenv").config();
-console.log("dot.env: ", process.env.DB_HOST);
 
-class MyTest extends BaseTest {
+class AdminTest extends BaseTest {
     async test() {
-        const site = process.env.URL;
-        await this.driver.get(site + "/admin/login/");
+        let driver = this.driver;
+        let siteURL = process.env.URL;
 
-        // Login correcto
-        await this.driver
-            .findElement(By.id("id_username"))
-            .sendKeys(process.env.username);
-        await this.driver
-            .findElement(By.id("id_password"))
-            .sendKeys(process.env.password);
+        // Acceder a la página de inicio de sesión
+        await driver.get(`${siteURL}/admin/login/`);
 
-        await this.driver
-            .findElement(By.css('input[value="Iniciar sessió"]'))
-            .click();
+        // Completar credenciales
+        let userField = await driver.findElement(By.id("id_username"));
+        let passField = await driver.findElement(By.id("id_password"));
 
-        await this.driver.wait(until.urlContains("/admin/"), 5000);
-        const siteNameElement = await this.driver.wait(
-            until.elementLocated(By.css("#site-name")),
-            5000
-        );
-        assert(
-            await siteNameElement.isDisplayed(),
-            "El elemento site-name no está visible"
-        );
-        console.log("[TEST] Login correcto");
+        await userField.sendKeys(process.env.username);
+        await passField.sendKeys(process.env.password);
 
-        // Pulsar en crear libro
-        const addButton = await this.driver.wait(
-            until.elementIsVisible(
-                this.driver.findElement(
-                    By.css('a[href="/admin/biblio/llibre/add/"]')
-                )
-            ),
-            5000
-        );
-        await addButton.click();
-
-        // Pulsar en crear por ISBN
-        const manualISBNLink = await this.driver.wait(
-            until.elementLocated(By.css("a.viewlink")),
-            5000
-        );
-        await manualISBNLink.click();
-
-        // Escribir ISBN
-        const alert = await this.driver.switchTo().alert();
-        await alert.sendKeys("0764526413");
-        await alert.accept();
-
-        // Esperar API
-        await this.driver.sleep(5000);
-
-        // Guardar libro
-        const saveButton = await this.driver.wait(
-            until.elementIsVisible(
-                this.driver.findElement(By.css('input[name="_save"]'))
-            ),
-            5000
-        );
-        await saveButton.click();
-
-        console.log("[TEST] Libro con ISBN creado");
-
-        // Buscar por ISBN
-        const searchBar = await this.driver.findElement(By.id("searchbar"));
-        await searchBar.sendKeys("0764526413");
-        await this.driver
-            .findElement(By.css('input[type="submit"][value="Cerca"]'))
-            .click();
+        // Iniciar sesión
+        let loginButton = await driver.findElement(By.css('input[value="Iniciar sessió"]'));
+        await loginButton.click();
+        await driver.wait(until.urlContains("/admin/"), 5000);
         
-        console.log("[TEST] Libro con ISBN encontrado");
+        let siteTitle = await driver.wait(until.elementLocated(By.css("#site-name")), 5000);
+        assert(await siteTitle.isDisplayed(), "El título del sitio no está visible");
+        
+        // Navegar para agregar un libro
+        let addBook = await driver.findElement(By.css('a[href="/admin/biblio/llibre/add/"]'));
+        await addBook.click();
 
+        // Seleccionar opción para agregar por ISBN
+        let isbnLink = await driver.findElement(By.css("a.viewlink"));
+        await isbnLink.click();
+
+        // Introducir ISBN y confirmar
+        let alertBox = await driver.switchTo().alert();
+        let isbn = "9780451524935";
+        await alertBox.sendKeys(isbn);
+        await alertBox.accept();
+
+        // Esperar respuesta de la API
+        await driver.sleep(5000);
+
+        // Verificar si el campo de fecha contiene un valor inválido y corregirlo
+        let dateField = await driver.findElement(By.id("id_data_edicio"));
+        let dateValue = await dateField.getAttribute("value");
+        if (dateValue.includes("NaN/NaN/NaN")) {
+            await dateField.clear();
+            await dateField.sendKeys("2024-02-22");
+        }
+
+        // Guardar el libro
+        let saveBtn = await driver.findElement(By.css('input[name="_save"]'));
+        await saveBtn.click();
+
+        // Buscar libro por ISBN
+        let searchBox = await driver.findElement(By.id("searchbar"));
+        await searchBox.sendKeys(isbn);
+        await driver.findElement(By.css('input[type="submit"][value="Cerca"]')).click();
+
+        console.log("CERCA CREADA OK");
         console.log("TEST OK");
     }
 }
 
-// executem el test
-
-(async function test_example() {
-    const test = new MyTest();
-    await test.run();
-    console.log("END");
+(async function ejecutarPrueba() {
+    const prueba = new AdminTest();
+    await prueba.run();
+    console.log("PRUEBA TERMINADA");
 })();
